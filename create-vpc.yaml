@@ -1,11 +1,17 @@
 - name: create VPC
   hosts: localhost
   connection: local
-  vars:             # Define regions and their corresponding CIDR blocks to avoid overlaps
-    regions:
-      - { name: 'us-east-1a', vpc_cidr: '10.1.0.0/16', web: '10.1.1.0/24', app: '10.1.2.0/24', db: '10.1.3.0/24' }
-      - { name: 'us-east-1b', vpc_cidr: '10.2.0.0/16', web: '10.2.1.0/24', app: '10.2.2.0/24', db: '10.2.3.0/24' }
-
+  vars: 
+    vpc_id: "{{ vpc.vpc.id }}"          
+    region: us-east-1
+    # Define the tiers and zones mapping
+    subnets_config:
+      - { tier: 'web', az: 'a', cidr: '10.0.1.0/24', public: yes }
+      - { tier: 'app', az: 'a', cidr: '10.0.2.0/24', public: no }
+      - { tier: 'db',  az: 'a', cidr: '10.0.3.0/24', public: no }
+      - { tier: 'web', az: 'b', cidr: '10.0.4.0/24', public: yes }
+      - { tier: 'app', az: 'b', cidr: '10.0.5.0/24', public: no }
+      - { tier: 'db',  az: 'b', cidr: '10.0.6.0/24', public: no }
   tasks:
     - name: ansible to install boto3 and botocore
       ansible.builtin.pip:
@@ -29,28 +35,14 @@
         tags:
           Name: my-igw
       register: igw
-    # - name: print the output
-    #   ansible.builtin.debug:
-    #     msg: "{{ igw }}"  
-    - name: Create VPC in each region
-      amazon.aws.ec2_vpc_net:
-        name: "3-tier-vpc-{{ item.name }}"
-        cidr_block: "{{ item.vpc_cidr }}"
-        region: "{{ item.name }}"
-      loop: "{{ regions }}"
-      register: vpcs
-    - name: Create 3-Tier Subnets in each region
+    - name: Create 6 Subnets for 3-Tier Architecture
       amazon.aws.ec2_vpc_subnet:
-        vpc_id: "{{ item.1.vpc.id }}"
-        region: "{{ item.0.name }}"
-        az: "{{ item.0.name }}a"
-        cidr: "{{ item.0[item.2] }}"
+        region: "{{ region }}"
+        vpc_id: "{{ vpc_id }}"
+        az: "{{ region }}{{ item.az }}"
+        cidr: "{{ item.cidr }}"
+        map_public_ip_on_launch: "{{ item.public }}"
         tags:
-          Name: "{{ item.2 | capitalize }}-Subnet-{{ item.0.name }}"
-          Tier: "{{ item.2 | capitalize }}"
-      # Loops through regions, matched VPC IDs, and the 3 tiers
-      with_nested:
-        - "{{ regions }}"
-        - "{{ vpcs.results }}"
-        - [ 'web', 'app', 'db' ]
-      when: item.0.name == item.1.item.name
+          Name: "{{ item.tier | capitalize }}-Subnet-{{ item.az }}"
+          Tier: "{{ item.tier }}"
+      loop: "{{ subnets_config }}"
