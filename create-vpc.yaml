@@ -46,7 +46,7 @@
       register: igw
     - name: print the output
       ansible.builtin.debug:
-        msg: "{{ vpc }}"  
+        msg: "{{ igw }}"  
       
     # - name: Create 6 Subnets for 3-Tier Architecture
     #   amazon.aws.ec2_vpc_subnet:
