@@ -83,10 +83,7 @@
           region: "{{ region }}"
           tags:
             Name: Private-RT
-          subnets: "{{ subnets_config.results | selectattr('item.tier', 'equalto', ['app', 'db']) | map(attribute='subnet.id') | list }}"
-          routes:
-            - dest: 0.0.0.0/0
-              gateway_id: "{{ igw_id }}"
+          subnets: "{{ subnets_config.results | rejectattr('item.tier', 'equalto', ['app', 'db']) | map(attribute='subnet.id') | list }}"
       register: private_rt      
   
       
