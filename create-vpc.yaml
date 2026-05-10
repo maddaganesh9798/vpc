@@ -89,41 +89,26 @@
       # subnets: "{{ subnets_config.results | rejectattr('item.tier', 'equalto', ['app', 'db']) | map(attribute='subnet.id') | list }}"
       # register: private_rt      
   
+    - name: Get my public IP address
+      ansible.builtin.uri:
+        url: http://ifconfig.me
+        return_content: yes
+      register: my_public_ip
+
     - name: Create Web Security Group
       amazon.aws.ec2_security_group:
-        name: web-sg
-        description: Allow HTTP from everywhere
+        name: web-server-sg
+        description: Allow HTTP from everywhere and SSH from my IP
         vpc_id: "{{ vpc.vpc.id }}"
         region: "{{ region }}"
         rules:
           - proto: tcp
             from_port: 80
             to_port: 80
-            cidr_ip: 0.0.0.0/0
+            cidr_ip: 0.0.0.0/0  # Public web access
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: "{{ my_public_ip.content }}/32" # Secure SSH access
       register: web_sg
-
-    - name: Create App Security Group
-      amazon.aws.ec2_security_group:
-        name: app-sg
-        description: Allow traffic from Web Tier
-        vpc_id: "{{ vpc.vpc.id }}"
-        region: "{{ region }}"
-        rules:
-          - proto: tcp
-            from_port: 8080 # Adjust based on your app port
-            to_port: 8080
-            group_id: "{{ web_sg.group_id }}" # Links to Web SG
-      register: app_sg
-
-    - name: Create Database Security Group
-      amazon.aws.ec2_security_group:
-        name: db-sg
-        description: Allow traffic from App Tier
-        vpc_id: "{{ vpc.vpc.id }}"
-        region: "{{ region }}"
-        rules:
-          - proto: tcp
-            from_port: 3306 # MySQL/Aurora port
-            to_port: 3306
-            group_id: "{{ app_sg.group_id }}" # Links to App SG
-      register: db_sg
+ 
