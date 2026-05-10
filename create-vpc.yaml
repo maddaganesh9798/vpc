@@ -1,0 +1,13 @@
+- name: create VPC
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Create VPC
+      amazon.aws.ec2_vpc_net:
+        name: my-vpc
+        cidr_block: 10.0.0.0/16
+        region: us-east-1
+      register: vpc
+    - name: print the output
+      ansible.builtin.debug:
+        msg: "{{ vpc }}"
