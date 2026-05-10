@@ -3,7 +3,7 @@
   connection: local
   vars: 
     vpc_id: "{{ vpc.vpc.id }}"
-    igw_id: "{{ igw.igw.id}}"          
+    igw_id: "{{ igw.gateway.id}}"          
     region: us-east-1
     # Define the tiers and zones mapping
     subnets_config:
@@ -28,15 +28,18 @@
         - boto3
         - botocore
         executable: pip3.9
+
     - name: Create VPC
       amazon.aws.ec2_vpc_net:
         name: my-vpc
         cidr_block: 10.0.0.0/16
         region: us-east-1
       register: vpc
+
     - name: print the output
       ansible.builtin.debug:
         msg: "{{ vpc }}"
+
     - name: Create and attach Internet Gateway
       amazon.aws.ec2_vpc_igw:
         vpc_id: "{{ vpc.vpc.id }}"  # Use the ID registered from the VPC creation task
@@ -44,40 +47,48 @@
         tags:
           Name: my-igw
       register: igw
+
     - name: print the output
       ansible.builtin.debug:
         msg: "{{ igw }}"  
       
-    # - name: Create 6 Subnets for 3-Tier Architecture
-    #   amazon.aws.ec2_vpc_subnet:
-    #     region: "{{ region }}"
-    #     vpc_id: "{{ vpc_id }}"
-    #     az: "{{ region }}{{ item.az }}"
-    #     cidr: "{{ item.cidr }}"
-    #     map_public: "{{ item.public }}"
-    #     tags:
-    #       Name: "{{ item.tier | capitalize }}-Subnet-{{ item.az }}"
-    #       Tier: "{{ item.tier }}"
-    #   loop: "{{ subnets_config }}"
-    #   - name: Create Public Route Table (Web Tier)
-    #     amazon.aws.ec2_vpc_route_table:
-    #       vpc_id: "{{ vpc_id }}"
-    #       region: "{{ region }}"
-    #       tags:
-    #         Name: Public-RT
-    #       subnets: "{{ public_subnets }}"
-    #       routes:
-    #         - dest: 0.0.0.0/0
-    #           gateway_id: "{{ igw_id }}"
-    #     register: public_rt
+    - name: Create 6 Subnets for 3-Tier Architecture
+      amazon.aws.ec2_vpc_subnet:
+        region: "{{ region }}"
+        vpc_id: "{{ vpc_id }}"
+        az: "{{ region }}{{ item.az }}"
+        cidr: "{{ item.cidr }}"
+        map_public: "{{ item.public }}"
+        tags:
+          Name: "{{ item.tier | capitalize }}-Subnet-{{ item.az }}"
+          Tier: "{{ item.tier }}"
+      loop: "{{ subnets_config }}"
+      register: subnets_config
 
-    #   - name: Create Private Route Table (App & DB Tiers)
-    #     amazon.aws.ec2_vpc_route_table:
-    #       vpc_id: "{{ vpc_id }}"
-    #       region: "{{ region }}"
-    #       tags:
-    #         Name: Private-RT
-    #       subnets: "{{ private_subnets }}"
-    #       # Note: Traffic stays internal. 
-    #       # Add a nat_gateway_id here later if you need internet for updates.
-    #     register: private_rt
+    - name: print the output
+      ansible.builtin.debug:
+        msg: "{{ subnets_config }}"  
+      
+
+      # - name: Create Public Route Table (Web Tier)
+      #   amazon.aws.ec2_vpc_route_table:
+      #     vpc_id: "{{ vpc_id }}"
+      #     region: "{{ region }}"
+      #     tags:
+      #       Name: Public-RT
+      #     subnets: "{{ public_subnets }}"
+      #     routes:
+      #       - dest: 0.0.0.0/0
+      #         gateway_id: "{{ igw_id }}"
+      #   register: public_rt
+
+      # - name: Create Private Route Table (App & DB Tiers)
+      #   amazon.aws.ec2_vpc_route_table:
+      #     vpc_id: "{{ vpc_id }}"
+      #     region: "{{ region }}"
+      #     tags:
+      #       Name: Private-RT
+      #     subnets: "{{ private_subnets }}"
+      #     # Note: Traffic stays internal. 
+      #     # Add a nat_gateway_id here later if you need internet for updates.
+      #   register: private_rt
