@@ -79,7 +79,7 @@
           routes:
             - dest: 0.0.0.0/0
               gateway_id: "{{ igw_id }}"
-        register: public_rt
+      register: public_rt
   
     - name: Create Private Route Table (App & DB Tiers)
       amazon.aws.ec2_vpc_route_table:
@@ -90,6 +90,6 @@
           subnets: "{{ private_subnets }}"
           # Note: Traffic stays internal. 
           # Add a nat_gateway_id here later if you need internet for updates.
-        register: private_rt      
+      register: private_rt      
   
       
