@@ -36,9 +36,9 @@
         region: us-east-1
       register: vpc
 
-    - name: print the output
-      ansible.builtin.debug:
-        msg: "{{ vpc }}"
+    # - name: print the output
+    #   ansible.builtin.debug:
+    #     msg: "{{ vpc }}"
 
     - name: Create and attach Internet Gateway
       amazon.aws.ec2_vpc_igw:
@@ -48,9 +48,9 @@
           Name: my-igw
       register: igw
 
-    - name: print the output
-      ansible.builtin.debug:
-        msg: "{{ igw }}"  
+    # - name: print the output
+    #   ansible.builtin.debug:
+    #     msg: "{{ igw }}"  
       
     - name: Create 6 Subnets for 3-Tier Architecture
       amazon.aws.ec2_vpc_subnet:
@@ -65,9 +65,9 @@
       loop: "{{ subnets_config }}"
       register: subnets_config
 
-    - name: print the output
-      ansible.builtin.debug:
-        msg: "{{ subnets_config }}"  
+    # - name: print the output
+    #   ansible.builtin.debug:
+    #     msg: "{{ subnets_config }}"  
 
     - name: Create Public Route Table (Web Tier)
       amazon.aws.ec2_vpc_route_table:
