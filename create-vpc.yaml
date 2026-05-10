@@ -91,24 +91,30 @@
   
     - name: Get my public IP address
       ansible.builtin.uri:
-        url: http://ipify.org
+        url: https://ipify.org
         return_content: yes
       register: my_public_ip
+      ignore_errors: yes
 
-    - name: Create Web Security Group
+    - name: Halt if IP could not be fetched
+      ansible.builtin.fail:
+        msg: "Could not fetch public IP. Check your internet connection."
+      when: my_public_ip.content is not defined or my_public_ip.content == ""
+
+    - name: Create Web Server Security Group
       amazon.aws.ec2_security_group:
         name: web-server-sg
-        description: Allow HTTP from everywhere and SSH from my IP
+        description: SSH from my IP and HTTP from everywhere
         vpc_id: "{{ vpc.vpc.id }}"
         region: "{{ region }}"
         rules:
           - proto: tcp
             from_port: 80
             to_port: 80
-            cidr_ip: 0.0.0.0/0  # Public web access
+            cidr_ip: 0.0.0.0/0
           - proto: tcp
             from_port: 22
             to_port: 22
-            cidr_ip: "{{ my_public_ip.content }}/32" # Secure SSH access
+            # Added trim to remove any invisible characters
+            cidr_ip: "{{ my_public_ip.content | trim }}/32"
       register: web_sg
- 
