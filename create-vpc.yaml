@@ -41,7 +41,7 @@
         vpc_id: "{{ vpc_id }}"
         az: "{{ region }}{{ item.az }}"
         cidr: "{{ item.cidr }}"
-        map_public_ip_on_launch: "{{ item.public }}"
+        map_public: "{{ item.public }}"
         tags:
           Name: "{{ item.tier | capitalize }}-Subnet-{{ item.az }}"
           Tier: "{{ item.tier }}"
