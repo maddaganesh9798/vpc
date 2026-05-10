@@ -17,3 +17,10 @@
     - name: print the output
       ansible.builtin.debug:
         msg: "{{ vpc }}"
+    - name: Create and attach Internet Gateway
+      amazon.aws.ec2_vpc_igw:
+        vpc_id: "{{ vpc.vpc.id }}"  # Use the ID registered from the VPC creation task
+        state: present
+        tags:
+          Name: my-igw
+      register: igw
