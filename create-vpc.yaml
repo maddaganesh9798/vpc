@@ -91,7 +91,7 @@
   
     - name: Get my public IP address
       ansible.builtin.uri:
-        url: http://ifconfig.me
+        url: http://ipify.org
         return_content: yes
       register: my_public_ip
 
