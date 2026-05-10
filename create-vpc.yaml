@@ -3,7 +3,7 @@
   connection: local
   vars: 
     vpc_id: "{{ vpc.vpc.id }}"
-    igw_id: "{{ igw.gateway.id}}"          
+    igw_id: "{{ igw.igw.id}}"          
     region: us-east-1
     # Define the tiers and zones mapping
     subnets_config:
