@@ -71,7 +71,7 @@
           region: "{{ region }}"
           tags:
             Name: Public-RT
-          subnets: "{{ subnets_config.results | selectattr('item.tier', 'equalto', 'web') | map(attribute='subnet.id') | list }}"
+          subnets: "{{ subnets_config.results | rejectattr('item.tier', 'equalto', 'web') | map(attribute='subnet.id') | list }}"
           routes:
             - dest: 0.0.0.0/0
               gateway_id: "{{ igw_id }}"
