@@ -3,7 +3,7 @@
   connection: local
   vars: 
     vpc_id: "{{ vpc.vpc.id }}"
-    igw_id: "{{ igw.gateway_id}}"          
+    igw_id: "{{ igw.msg.gateway_id}}"          
     region: us-east-1
     # Define the tiers and zones mapping
     subnets_config:
@@ -13,10 +13,6 @@
       - { tier: 'web', az: 'b', cidr: '10.0.4.0/24', public: yes }
       - { tier: 'app', az: 'b', cidr: '10.0.5.0/24', public: no }
       - { tier: 'db',  az: 'b', cidr: '10.0.6.0/24', public: no }
-    # region: us-east-1
-    # vpc_id: "vpc-xxxxxx"
-    igw_id: "igw-xxxxxx" # Ensure you have an Internet Gateway ID
-    # Map subnet IDs from your previous 'register' or look them up
     public_subnets: ["subnet-web-a-id", "subnet-web-b-id"]
     private_subnets: ["subnet-app-a-id", "subnet-app-b-id", "subnet-db-a-id", "subnet-db-b-id"]
 
