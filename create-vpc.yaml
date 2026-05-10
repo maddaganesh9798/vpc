@@ -71,7 +71,7 @@
           region: "{{ region }}"
           tags:
             Name: Public-RT
-          subnets: "{{ public_subnets }}"
+          subnets: "{{ subnets_config.results | selectattr('item.tier', 'equalto', 'web') | map(attribute='subnet.id') | list }}"
           routes:
             - dest: 0.0.0.0/0
               gateway_id: "{{ igw_id }}"
@@ -83,9 +83,7 @@
           region: "{{ region }}"
           tags:
             Name: Private-RT
-          subnets: "{{ private_subnets }}"
-          # Note: Traffic stays internal. 
-          # Add a nat_gateway_id here later if you need internet for updates.
+          subnets: "{{ subnets_config.results | selectattr('item.tier', 'subset', ['app', 'db']) | map(attribute='subnet.id') | list }}"
       register: private_rt      
   
       
