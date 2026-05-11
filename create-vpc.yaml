@@ -148,7 +148,7 @@
             group_id: "{{ web_sg_result.group_id }}"
       register: app_sg_result
 
-        - name: Allocate Elastic IP for NAT Gateway
+    - name: Allocate Elastic IP for NAT Gateway
       amazon.aws.ec2_eip:
         region: "{{ region }}"
         state: present
