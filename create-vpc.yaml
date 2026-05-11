@@ -93,7 +93,7 @@
             from_port: 80
             to_port: 80
             cidr_ip: 0.0.0.0/0
-      register: Expance_Public
+      register: Public
 
     - name: Create Expance Private Security Group
       amazon.aws.ec2_security_group:
@@ -106,7 +106,7 @@
             from_port: 8080 # Adjust based on your app port
             to_port: 8080
             group_id: "{{ Public.group_id }}" # Links to Web SG
-      register: Expance_Private
+      register: Private
 
     - name: Create Expance Database Security Group
       amazon.aws.ec2_security_group:
@@ -119,7 +119,7 @@
             from_port: 3306 # MySQL/Aurora port
             to_port: 3306
             group_id: "{{ Private.group_id }}" # Links to App SG
-      register: Expance_DB
+      register: DB
 
     # - name: Create Expance Public Security Group
     #   amazon.aws.ec2_security_group:
