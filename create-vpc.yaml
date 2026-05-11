@@ -108,7 +108,7 @@
           - proto: tcp
             from_port: 8080 # Adjust based on your app port
             to_port: 8080
-            group_id: "{{ web_sg.group_id }}" # Links to Web SG
+            group_id: "{{ Expance_Public.group_id }}" # Links to Web SG
       register: Expance_Private
 
     - name: Create Expance Database Security Group
@@ -121,5 +121,5 @@
           - proto: tcp
             from_port: 3306 # MySQL/Aurora port
             to_port: 3306
-            group_id: "{{ app_sg.group_id }}" # Links to App SG
+            group_id: "{{ Expance_Private.group_id }}" # Links to App SG
       register: Expance_DB
