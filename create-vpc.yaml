@@ -161,7 +161,7 @@
       amazon.aws.ec2_vpc_nat_gateway:
         region: "{{ region }}"
         # Place NAT in the first public subnet found in your registered subnets
-        subnet_id: "{{ subnets_config.results | selectattr('item.public', 'equalto', yes) | map(attribute='subnet.id') | first }}"
+        subnet_id: "{{ subnets_config.results | selectattr('item.public', 'equalto', true) | map(attribute='subnet.id') | first }}"
         allocation_id: "{{ nat_eip.allocation_id }}"
         wait: yes
         if_exist_do_not_create: yes
