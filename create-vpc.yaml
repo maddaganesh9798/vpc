@@ -1,4 +1,4 @@
-- name: create VPC
+- name: create VPC, igw, subnets, Route Tables, Security group
   hosts: localhost
   connection: local
   vars: 
@@ -7,16 +7,14 @@
     region: us-east-1
     # Define the tiers and zones mapping
     subnets_config:
-      - { tier: 'web', az: 'a', cidr: '10.0.1.0/24', public: yes }
-      - { tier: 'app', az: 'a', cidr: '10.0.2.0/24', public: no }
-      - { tier: 'db',  az: 'a', cidr: '10.0.3.0/24', public: no }
-      - { tier: 'web', az: 'b', cidr: '10.0.4.0/24', public: yes }
-      - { tier: 'app', az: 'b', cidr: '10.0.5.0/24', public: no }
-      - { tier: 'db',  az: 'b', cidr: '10.0.6.0/24', public: no }
+      - { tier: 'Expance Public', az: 'a', cidr: '10.0.1.0/24', public: yes }
+      - { tier: 'Expance Private', az: 'a', cidr: '10.0.2.0/24', public: no }
+      - { tier: 'Expance DB',  az: 'a', cidr: '10.0.3.0/24', public: no }
+      - { tier: 'Expance Public', az: 'b', cidr: '10.0.4.0/24', public: yes }
+      - { tier: 'Expance Private', az: 'b', cidr: '10.0.5.0/24', public: no }
+      - { tier: 'Expance DB',  az: 'b', cidr: '10.0.6.0/24', public: no }
     # public_subnets: ["subnet-web-a-id", "subnet-web-b-id"]
     # private_subnets: ["subnet-app-a-id", "subnet-app-b-id", "subnet-db-a-id", "subnet-db-b-id"]
-
-  tasks:  
   tasks:
     - name: ansible to install boto3 and botocore
       ansible.builtin.pip:
@@ -27,7 +25,7 @@
 
     - name: Create VPC
       amazon.aws.ec2_vpc_net:
-        name: my-vpc
+        name: Expance
         cidr_block: 10.0.0.0/16
         region: us-east-1
       register: vpc
@@ -41,7 +39,7 @@
         vpc_id: "{{ vpc.vpc.id }}"  # Use the ID registered from the VPC creation task
         state: present
         tags:
-          Name: my-igw
+          Name: Expance-igw
       register: igw
 
     # - name: print the output
@@ -65,33 +63,31 @@
     #   ansible.builtin.debug:
     #     msg: "{{ subnets_config }}"  
 
-    - name: Create Public Route Table (Web Tier)
+    - name: Create Public Route Table (Expance public )
       amazon.aws.ec2_vpc_route_table:
           vpc_id: "{{ vpc_id }}"
           region: "{{ region }}"
           tags:
-            Name: Public-RT
-          subnets: "{{ subnets_config.results | selectattr('item.tier', 'equalto', 'web') | map(attribute='subnet.id') | list }}"
+            Name: Expance Public
+          subnets: "{{ subnets_config.results | selectattr('item.tier', 'equalto', 'Expance Public') | map(attribute='subnet.id') | list }}"
           routes:
             - dest: 0.0.0.0/0
               gateway_id: "{{ igw_id }}"
-      register: public_rt
+      register: Expance_Public
   
-    - name: Create Private Route Table (App & DB Tiers)
+    - name: Create Private Route Table (Expance Private & Expance DB)
       amazon.aws.ec2_vpc_route_table:
           vpc_id: "{{ vpc_id }}"
           region: "{{ region }}"
           tags:
-            Name: Private-RT
-          subnets: "{{ subnets_config.results | rejectattr('item.tier', 'equalto', 'web') | map(attribute='subnet.id') | list }}"
-      register: private_rt
-      
-      # subnets: "{{ subnets_config.results | rejectattr('item.tier', 'equalto', ['app', 'db']) | map(attribute='subnet.id') | list }}"
-      # register: private_rt      
+            Name: Expance Private
+          subnets: "{{ subnets_config.results | rejectattr('item.tier', 'equalto', 'Expance Public') | map(attribute='subnet.id') | list }}"
+      register: Expance_Private
+         
   
-    - name: Create Web Security Group
+    - name: Create Expance Public Security Group
       amazon.aws.ec2_security_group:
-        name: web-sg
+        name: Expance Public
         description: Allow HTTP from everywhere
         vpc_id: "{{ vpc.vpc.id }}"
         region: "{{ region }}"
@@ -100,11 +96,11 @@
             from_port: 80
             to_port: 80
             cidr_ip: 0.0.0.0/0
-      register: web_sg
+      register: Expance_Public
 
-    - name: Create App Security Group
+    - name: Create Expance Private Security Group
       amazon.aws.ec2_security_group:
-        name: app-sg
+        name: Expance Private
         description: Allow traffic from Web Tier
         vpc_id: "{{ vpc.vpc.id }}"
         region: "{{ region }}"
@@ -113,11 +109,11 @@
             from_port: 8080 # Adjust based on your app port
             to_port: 8080
             group_id: "{{ web_sg.group_id }}" # Links to Web SG
-      register: app_sg
+      register: Expance_Private
 
-    - name: Create Database Security Group
+    - name: Create Expance Database Security Group
       amazon.aws.ec2_security_group:
-        name: db-sg
+        name: Expance DB
         description: Allow traffic from App Tier
         vpc_id: "{{ vpc.vpc.id }}"
         region: "{{ region }}"
@@ -126,4 +122,4 @@
             from_port: 3306 # MySQL/Aurora port
             to_port: 3306
             group_id: "{{ app_sg.group_id }}" # Links to App SG
-      register: db_sg
+      register: Expance_DB
