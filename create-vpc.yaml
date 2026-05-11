@@ -170,7 +170,7 @@
     #       Project: "Expance"
     #   register: nat_gw
 
-        - name: Create NAT Gateway in a Public Subnet
+    - name: Create NAT Gateway in a Public Subnet
       amazon.aws.ec2_vpc_nat_gateway:
         region: "{{ region }}"
         subnet_id: "{{ subnets_config.results | selectattr('item.public', 'equalto', true) | map(attribute='subnet.id') | first }}"
