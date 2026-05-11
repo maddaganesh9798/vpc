@@ -148,14 +148,24 @@
             group_id: "{{ web_sg_result.group_id }}"
       register: app_sg_result
 
-    - name: Allocate Elastic IP for NAT Gateway
+        - name: Allocate Elastic IP for NAT Gateway
       amazon.aws.ec2_eip:
         region: "{{ region }}"
         state: present
-        reuse_existing_ip_allowed: yes  # Find an existing EIP if available
+        reuse_existing_ip_allowed: yes
+        tag_lookup: str  # <--- THIS IS THE FIX
         tags:
           Name: Expance-NAT-EIP
       register: nat_eip
+
+    # - name: Allocate Elastic IP for NAT Gateway
+    #   amazon.aws.ec2_eip:
+    #     region: "{{ region }}"
+    #     state: present
+    #     reuse_existing_ip_allowed: yes  # Find an existing EIP if available
+    #     tags:
+    #       Name: Expance-NAT-EIP
+    #   register: nat_eip
 
     # - name: Create NAT Gateway in a Public Subnet
     #   amazon.aws.ec2_vpc_nat_gateway:
