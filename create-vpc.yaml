@@ -7,12 +7,12 @@
     region: us-east-1
     # Define the tiers and zones mapping
     subnets_config:
-      - { tier: 'Expance Public', az: 'a', cidr: '10.0.1.0/24', public: yes }
-      - { tier: 'Expance Private', az: 'a', cidr: '10.0.2.0/24', public: no }
-      - { tier: 'Expance DB',  az: 'a', cidr: '10.0.3.0/24', public: no }
-      - { tier: 'Expance Public', az: 'b', cidr: '10.0.4.0/24', public: yes }
-      - { tier: 'Expance Private', az: 'b', cidr: '10.0.5.0/24', public: no }
-      - { tier: 'Expance DB',  az: 'b', cidr: '10.0.6.0/24', public: no }
+      - { tier: 'Expance-Public', az: 'a', cidr: '10.0.1.0/24', public: yes }
+      - { tier: 'Expance-Private', az: 'a', cidr: '10.0.2.0/24', public: no }
+      - { tier: 'Expance-DB',  az: 'a', cidr: '10.0.3.0/24', public: no }
+      - { tier: 'Expance-Public', az: 'b', cidr: '10.0.4.0/24', public: yes }
+      - { tier: 'Expance-Private', az: 'b', cidr: '10.0.5.0/24', public: no }
+      - { tier: 'Expance-DB',  az: 'b', cidr: '10.0.6.0/24', public: no }
     # public_subnets: ["subnet-web-a-id", "subnet-web-b-id"]
     # private_subnets: ["subnet-app-a-id", "subnet-app-b-id", "subnet-db-a-id", "subnet-db-b-id"]
   tasks:
@@ -54,7 +54,7 @@
         cidr: "{{ item.cidr }}"
         map_public: "{{ item.public }}"
         tags:
-          Name: "{{ item.tier | capitalize }}-Subnet-{{ item.az }}"
+          Name: "{{ item.tier | capitalize }}-{{ item.az }}"
           Tier: "{{ item.tier }}"
       loop: "{{ subnets_config }}"
       register: subnets_config
