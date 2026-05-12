@@ -67,11 +67,11 @@
           region: "{{ region }}"
           tags:
             Name: Public
-          subnets: "{{ subnets_config.results | selectattr('item.tier', 'equalto', 'Expance Public') | map(attribute='subnet.id') | list }}"
+          subnets: "{{ subnets_config.results | selectattr('item.tier', 'equalto', 'Public') | map(attribute='subnet.id') | list }}"
           routes:
             - dest: 0.0.0.0/0
               gateway_id: "{{ igw_id }}"
-      register: Expance_Public
+      register: Public
   
     - name: Create Private Route Table (Expance Private & Expance DB)
       amazon.aws.ec2_vpc_route_table:
@@ -79,8 +79,8 @@
           region: "{{ region }}"
           tags:
             Name: Private
-          subnets: "{{ subnets_config.results | rejectattr('item.tier', 'equalto', 'Expance Public') | map(attribute='subnet.id') | list }}"
-      register: Expance_Private
+          subnets: "{{ subnets_config.results | rejectattr('item.tier', 'equalto', 'Public') | map(attribute='subnet.id') | list }}"
+      register: Private
          
     - name: Create Expance Public Security Group
       amazon.aws.ec2_security_group:
@@ -121,32 +121,6 @@
             group_id: "{{ Private.group_id }}" # Links to App SG
       register: DB
 
-    # - name: Create Expance Public Security Group
-    #   amazon.aws.ec2_security_group:
-    #     name: "Expance Public SG"
-    #     description: Allow HTTP from everywhere
-    #     vpc_id: "{{ vpc_id }}"
-    #     region: "{{ region }}"
-    #     rules:
-    #       - proto: tcp
-    #         from_port: 80
-    #         to_port: 80
-    #         cidr_ip: 0.0.0.0/0
-    #   register: web_sg_result
-
-    # - name: Create Expance Private Security Group
-    #   amazon.aws.ec2_security_group:
-    #     name: "Expance Private SG"
-    #     description: Allow traffic from Web Tier
-    #     vpc_id: "{{ vpc_id }}"
-    #     region: "{{ region }}"
-    #     rules:
-    #       - proto: tcp
-    #         from_port: 8080
-    #         to_port: 8080
-    #         group_id: "{{ web_sg_result.group_id }}"
-    #   register: app_sg_result
-
     - name: Allocate Elastic IP for NAT Gateway
       amazon.aws.ec2_eip:
         region: "{{ region }}"
@@ -159,29 +133,6 @@
           Name: Expance-NAT-EIP
       register: nat_eip
 
-
-    # - name: Allocate Elastic IP for NAT Gateway
-    #   amazon.aws.ec2_eip:
-    #     region: "{{ region }}"
-    #     state: present
-    #     reuse_existing_ip_allowed: yes  # Find an existing EIP if available
-    #     tags:
-    #       Name: Expance-NAT-EIP
-    #   register: nat_eip
-
-    # - name: Create NAT Gateway in a Public Subnet
-    #   amazon.aws.ec2_vpc_nat_gateway:
-    #     region: "{{ region }}"
-    #     subnet_id: "{{ subnets_config.results | selectattr('item.public', 'equalto', true) | map(attribute='subnet.id') | first }}"
-    #     allocation_id: "{{ nat_eip.allocation_id }}"
-    #     wait: yes
-    #     if_exist_do_not_create: yes     # Check for existing NAT before creating
-    #     release_on_disassociation: no  # Keeps the NAT/EIP relationship stable
-    #     tags:
-    #       Name: "Expance-NAT-Gateway"
-    #       Project: "Expance"
-    #   register: nat_gw
-
     - name: Create NAT Gateway in a Public Subnet
       amazon.aws.ec2_vpc_nat_gateway:
         region: "{{ region }}"
@@ -193,24 +144,6 @@
           Name: "Expance-NAT-Gateway"
       register: nat_gw
   
-
-    # - name: Allocate Elastic IP for NAT Gateway
-    #   amazon.aws.ec2_eip:
-    #     region: "{{ region }}"
-    #     tags:
-    #       Name: Expance-NAT-EIP
-    #   register: nat_eip
-
-    # - name: Create NAT Gateway in a Public Subnet
-    #   amazon.aws.ec2_vpc_nat_gateway:
-    #     region: "{{ region }}"
-    #     # Place NAT in the first public subnet found in your registered subnets
-    #     subnet_id: "{{ subnets_config.results | selectattr('item.public', 'equalto', true) | map(attribute='subnet.id') | first }}"
-    #     allocation_id: "{{ nat_eip.allocation_id }}"
-    #     wait: yes
-    #     if_exist_do_not_create: yes
-    #   register: nat_gw
-
     - name: Update Private Route Table with NAT Gateway
       amazon.aws.ec2_vpc_route_table:
         vpc_id: "{{ vpc_id }}"
@@ -218,7 +151,7 @@
         lookup: tag
         tags:
           Name: Expance Private
-        subnets: "{{ subnets_config.results | rejectattr('item.tier', 'equalto', 'Expance-Public') | map(attribute='subnet.id') | list }}"
+        subnets: "{{ subnets_config.results | rejectattr('item.tier', 'equalto', 'Public') | map(attribute='subnet.id') | list }}"
         routes:
           - dest: 0.0.0.0/0
             gateway_id: "{{ nat_gw.nat_gateway_id }}"
