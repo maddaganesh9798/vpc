@@ -56,9 +56,10 @@
       amazon.aws.route53:
         state: present
         zone: "{{ zone }}"
-        record: "{{ item.invocation.module_args.name }}.{{ zone }}"
+        record: "{{ item.item.name }}.{{ zone }}"
         type: A
         ttl: 1
+        # Accessing the first instance in the list [0]
         value: "{{ item.instances[0].private_ip_address }}"
         wait: true
         overwrite: true
@@ -68,13 +69,38 @@
       amazon.aws.route53:
         state: present
         zone: "{{ zone }}"
-        record: "{{ zone }}" # or frontend.{{ zone }}
+        record: "{{ zone }}"
         type: A
         ttl: 1
+        # Accessing the first instance in the list [0]
         value: "{{ item.instances[0].public_ip_address }}"
-        wait: true
+        wait: yes
       loop: "{{ ec2_instances.results }}"
       when: item.item.name == 'frontend'
+
+    # - name: Create Private Route 53 records
+    #   amazon.aws.route53:
+    #     state: present
+    #     zone: "{{ zone }}"
+    #     record: "{{ item.invocation.module_args.name }}.{{ zone }}"
+    #     type: A
+    #     ttl: 1
+    #     value: "{{ item.instances[0].private_ip_address }}"
+    #     wait: true
+    #     overwrite: true
+    #   loop: "{{ ec2_instances.results }}"
+
+    # - name: Create Public Route 53 record for Frontend
+    #   amazon.aws.route53:
+    #     state: present
+    #     zone: "{{ zone }}"
+    #     record: "{{ zone }}" # or frontend.{{ zone }}
+    #     type: A
+    #     ttl: 1
+    #     value: "{{ item.instances[0].public_ip_address }}"
+    #     wait: true
+    #   loop: "{{ ec2_instances.results }}"
+    #   when: item.item.name == 'frontend'
 
   #private IP R53
   # - name: create r53 private records
