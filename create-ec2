@@ -1,0 +1,64 @@
+- name: create ec2 and r53 records
+  hosts: localhost
+  connection: local
+  vars:
+    ami_id: "ami-0220d79f3f480ecf5"
+    instances:
+    - { name: 'frontend', tier: 'Expance-Public', sg_id: "{{ Public.group_id }}" }
+    - { name: 'backend',  tier: 'Expance-Private', sg_id: "{{ Private.group_id }}" }
+    - { name: 'mysql', tier: 'Expance-DB', sg_id: "{{ DB.group_id }}" }
+    zone: daws98.store
+  tasks:
+    - name: Get all subnets for the VPC
+      amazon.aws.ec2_vpc_subnet_info:
+      region: "{{ region }}"
+      filters:
+        vpc-id: "vpc-0da46496d0678ab8b" # Replace with your actual VPC ID
+    register: subnets_info
+
+    - name: Launch EC2 Instances
+      amazon.aws.ec2_instance:
+        name: "{{ item.name }}"
+        region: "{{ region }}"
+        image_id: "{{ ami_id }}"
+        instance_type: "{{ instance_type }}"
+        # This filter finds the subnet where the 'Tier' tag matches item.tier
+        vpc_subnet_id: "{{ subnets_info.subnets | selectattr('tags.Tier', 'equalto', item.tier) | map(attribute='id') | first }}"
+        security_group: "{{ item.sg_id }}"
+        wait: yes
+        tags:
+          Tier: "{{ item.tier }}"
+      loop: "{{ instances }}"
+      register: ec2_instances
+      
+  # - name: print the output
+  #   ansible.builtin.debug:
+  #     msg: "{{ ec2_instances }}"
+
+  #private IP R53
+  # - name: create r53 private records
+  #   amazon.aws.route53:
+  #     state: present
+  #     zone: "{{ zone }}"
+  #     record: "{{ item.item }}.{{ zone }}" #mysql.daws81s.online
+  #     type: A
+  #     ttl: 1
+  #     value: "{{ item.instances[0].private_ip_address }}"
+  #     wait: true
+  #     overwrite: true
+  #   loop: "{{ ec2_instances.results }}"
+
+  # - name: create r53 public record for frontend
+  #   amazon.aws.route53:
+  #     state: present
+  #     zone: "{{ zone }}"
+  #     record: "{{ zone }}" #daws81s.online
+  #     type: A
+  #     ttl: 1
+  #     value: "{{ item.instances[0].public_ip_address }}"
+  #     wait: true
+  #     overwrite: true
+  #   loop: "{{ ec2_instances.results }}"
+  #   when: item.item == "frontend" #when keyword should not have {{}}
+
+
