@@ -6,6 +6,9 @@
     igw_id: "{{ igw.gateway_id }}"          
     region: us-east-1
     # Define the tiers and zones mapping
+    image_id: ami-0220d79f3f480ecf5 # Amazon Linux 2023 in us-east-1
+    instance_type: t3.micro
+    domain_name: daws98.store 
     subnets_config:
       - { tier: 'Expance-Public', az: 'a', cidr: '10.0.1.0/24', public: yes }
       - { tier: 'Expance-Private', az: 'a', cidr: '10.0.2.0/24', public: no }
@@ -155,26 +158,31 @@
           - dest: 0.0.0.0/0
             gateway_id: "{{ nat_gw.nat_gateway_id }}"
 
-    # - name: Create NAT Gateway in a Public Subnet
-    #   amazon.aws.ec2_vpc_nat_gateway:
-    #     region: "{{ region }}"
-    #     subnet_id: "{{ subnets_config.results | selectattr('item.Public', 'equalto', true) | map(attribute='subnet.id') | first }}"
-    #     allocation_id: "{{ nat_eip.allocation_id }}"
-    #     wait: yes
-    #     if_exist_do_not_create: yes  # This is the key for idempotency
-    #     tags:
-    #       Name: "Expance-NAT-Gateway"
-    #   register: nat_gw
-  
-    # - name: Update Private Route Table with NAT Gateway
-    #   amazon.aws.ec2_vpc_route_table:
-    #     vpc_id: "{{ vpc_id }}"
-    #     region: "{{ region }}"
-    #     lookup: tag
-    #     tags:
-    #       Name: Expance Private
-    #     subnets: "{{ subnets_config.results | rejectattr('item.tier', 'equalto', 'Public') | map(attribute='subnet.id') | list }}"
-    #     routes:
-    #       - dest: 0.0.0.0/0
-    #         gateway_id: "{{ nat_gw.nat_gateway_id }}"
+    - name: Launch EC2 Instances
+      amazon.aws.ec2_instance:
+        name: "Expance-{{ item.name }}"
+        region: "{{ region }}"
+        image_id: "{{ image_id }}"
+        instance_type: "{{ instance_type }}"
+        vpc_subnet_id: "{{ (subnets_config.results | selectattr('item.tier', 'equalto', item.tier) | first).subnet.id }}"
+        security_group: "{{ item.sg_id }}"
+        wait: yes
+        tags:
+          Tier: "{{ item.tier }}"
+      loop:
+        - { name: 'Frontend', tier: 'Expance-Public', sg_id: "{{ Public.group_id }}" }
+        - { name: 'Backend',  tier: 'Expance-Private', sg_id: "{{ Private.group_id }}" }
+        - { name: 'Database', tier: 'Expance-DB',      sg_id: "{{ DB.group_id }}" }
+      register: ec2_instances
 
+    - name: Create Route 53 Private Records
+      amazon.aws.route53:
+        state: present
+        zone: "{{ domain_name }}"
+        record: "{{ item.item.name | lower }}.{{ domain_name }}"
+        type: A
+        ttl: 300
+        # Use private_ip_address for Backend/DB and public_ip_address for Frontend
+        value: "{{ item.instances[0].public_ip_address if item.item.tier == 'Expance-Public' else item.instances[0].private_ip_address }}"
+        wait: yes
+      loop: "{{ ec2_instances.results }}"
