@@ -2,10 +2,13 @@
   hosts: localhost
   connection: local
   vars:
-    subnet_id: "subnet-0959de57b0ad6410f"
-    sg_id: "sg-0bdc6d5500f2d30d5"
+    # subnet_id: "subnet-0959de57b0ad6410f"
+    # sg_id: "sg-0bdc6d5500f2d30d5"
     ami_id: "ami-0220d79f3f480ecf5"
     instances:
+    - { name: 'frontend', tier: 'Expance-Public', sg_id: "{{ Public.group_id }}" }
+    - { name: 'backend',  tier: 'Expance-Private', sg_id: "{{ Private.group_id }}" }
+    - { name: 'mysql', tier: 'Expance-DB', sg_id: "{{ DB.group_id }}" }
     - mysql
     - backend
     - frontend
@@ -17,6 +20,21 @@
       - boto3
       - botocore
       executable: pip3.9
+
+  - name: Launch EC2 Instances
+    amazon.aws.ec2_instance:
+      name: "{{ item.name }}"
+      region: "{{ region }}"
+      image_id: "{{ image_id }}"
+      instance_type: "{{ instance_type }}"
+      vpc_subnet_id: "{{ (subnets_config.results | selectattr('item.tier', 'equalto', item.tier) | first).subnet.id }}"
+      security_group: "{{ item.sg_id }}"
+      wait: yes
+      tags:
+        Tier: "{{ item.tier }}"
+    loop:"{{ instance }}"
+    register: ec2_instances
+     
   - name: create ec2 instance
     amazon.aws.ec2_instance:
       name: "{{ item }}"
