@@ -72,7 +72,7 @@
         type: A
         ttl: 1
         value: "{{ item.instances[0].public_ip_address }}"
-        wait: yes
+        wait: true
       loop: "{{ ec2_instances.results }}"
       when: item.invocation.module_args.name == 'frontend'
 
