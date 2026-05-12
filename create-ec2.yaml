@@ -3,18 +3,21 @@
   connection: local
   vars:
     ami_id: "ami-0220d79f3f480ecf5"
+    region: "us-east-1" # Make sure this is defined
+    instance_type: "t3.micro"
     instances:
-    - { name: 'frontend', tier: 'Expance-Public', sg_id: "{{ Public.group_id }}" }
-    - { name: 'backend',  tier: 'Expance-Private', sg_id: "{{ Private.group_id }}" }
-    - { name: 'mysql', tier: 'Expance-DB', sg_id: "{{ DB.group_id }}" }
+      - { name: 'frontend', tier: 'Expance-Public', sg_id: "{{ Public.group_id }}" }
+      - { name: 'backend',  tier: 'Expance-Private', sg_id: "{{ Private.group_id }}" }
+      - { name: 'mysql', tier: 'Expance-DB', sg_id: "{{ DB.group_id }}" }
     zone: daws98.store
+
   tasks:
     - name: Get all subnets for the VPC
       amazon.aws.ec2_vpc_subnet_info:
-      region: "{{ region }}"
-      filters:
-        vpc-id: "vpc-0da46496d0678ab8b" # Replace with your actual VPC ID
-    register: subnets_info
+        region: "{{ region }}"
+        filters:
+          vpc-id: "vpc-0da46496d0678ab8b"
+      register: subnets_info
 
     - name: Launch EC2 Instances
       amazon.aws.ec2_instance:
@@ -22,7 +25,6 @@
         region: "{{ region }}"
         image_id: "{{ ami_id }}"
         instance_type: "{{ instance_type }}"
-        # This filter finds the subnet where the 'Tier' tag matches item.tier
         vpc_subnet_id: "{{ subnets_info.subnets | selectattr('tags.Tier', 'equalto', item.tier) | map(attribute='id') | first }}"
         security_group: "{{ item.sg_id }}"
         wait: yes
@@ -30,6 +32,7 @@
           Tier: "{{ item.tier }}"
       loop: "{{ instances }}"
       register: ec2_instances
+
       
   # - name: print the output
   #   ansible.builtin.debug:
