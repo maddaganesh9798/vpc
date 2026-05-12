@@ -8,7 +8,7 @@
     # Define the tiers and zones mapping
     image_id: ami-0220d79f3f480ecf5 # Amazon Linux 2023 in us-east-1
     instance_type: t3.micro
-    domain_name: daws98.store 
+    zone: daws98.store 
     subnets_config:
       - { tier: 'Expance-Public', az: 'a', cidr: '10.0.1.0/24', public: yes }
       - { tier: 'Expance-Private', az: 'a', cidr: '10.0.2.0/24', public: no }
@@ -160,7 +160,7 @@
 
     - name: Launch EC2 Instances
       amazon.aws.ec2_instance:
-        name: "Expance-{{ item.name }}"
+        name: "{{ item.name }}"
         region: "{{ region }}"
         image_id: "{{ image_id }}"
         instance_type: "{{ instance_type }}"
@@ -175,17 +175,17 @@
         - { name: 'Database', tier: 'Expance-DB',      sg_id: "{{ DB.group_id }}" }
       register: ec2_instances
 
-    - name: Create Route 53 Private Records
-      amazon.aws.route53:
-        state: present
-        zone: "{{ domain_name }}"
-        record: "{{ item.item.name | lower }}.{{ domain_name }}"
-        type: A
-        ttl: 300
-        # Use instances[0] because ec2_instance returns a list
-        value: "{{ item.instances[0].public_ip_address if item.item.tier == 'Expance-Public' else item.instances[0].private_ip_address }}"
-        wait: yes
-      loop: "{{ ec2_instances.results }}"
+    # - name: Create Route 53 Private Records
+    #   amazon.aws.route53:
+    #     state: present
+    #     zone: "{{ domain_name }}"
+    #     record: "{{ item.item.name | lower }}.{{ domain_name }}"
+    #     type: A
+    #     ttl: 300
+    #     # Use instances[0] because ec2_instance returns a list
+    #     value: "{{ item.instances[0].public_ip_address if item.item.tier == 'Expance-Public' else item.instances[0].private_ip_address }}"
+    #     wait: yes
+    #   loop: "{{ ec2_instances.results }}"
     # - name: Create Route 53 Private Records
     #   amazon.aws.route53:
     #     state: present
@@ -197,3 +197,28 @@
     #     value: "{{ item.instances[0].public_ip_address if item.item.tier == 'Expance-Public' else item.instances[0].private_ip_address }}"
     #     wait: yes
     #   loop: "{{ ec2_instances.results }}"
+#private IP R53
+    - name: create r53 private records
+      amazon.aws.route53:
+        state: present
+        zone: "{{ zone }}"
+        record: "{{ item.item }}.{{ zone }}" #mysql.daws81s.online
+        type: A
+        ttl: 1
+        value: "{{ item.instances[0].private_ip_address }}"
+        wait: true
+        overwrite: true
+      loop: "{{ ec2_instances.results }}"
+
+    - name: create r53 public record for frontend
+      amazon.aws.route53:
+        state: present
+        zone: "{{ zone }}"
+        record: "{{ zone }}" #daws81s.online
+        type: A
+        ttl: 1
+        value: "{{ item.instances[0].public_ip_address }}"
+        wait: true
+        overwrite: true
+      loop: "{{ ec2_instances.results }}"
+      when: item.item == "Expance-Frontend" #when keyword should not have {{}}
