@@ -182,7 +182,18 @@
         record: "{{ item.item.name | lower }}.{{ domain_name }}"
         type: A
         ttl: 300
-        # Use private_ip_address for Backend/DB and public_ip_address for Frontend
+        # Use instances[0] because ec2_instance returns a list
         value: "{{ item.instances[0].public_ip_address if item.item.tier == 'Expance-Public' else item.instances[0].private_ip_address }}"
         wait: yes
       loop: "{{ ec2_instances.results }}"
+    # - name: Create Route 53 Private Records
+    #   amazon.aws.route53:
+    #     state: present
+    #     zone: "{{ domain_name }}"
+    #     record: "{{ item.item.name | lower }}.{{ domain_name }}"
+    #     type: A
+    #     ttl: 1
+    #     # Use private_ip_address for Backend/DB and public_ip_address for Frontend
+    #     value: "{{ item.instances[0].public_ip_address if item.item.tier == 'Expance-Public' else item.instances[0].private_ip_address }}"
+    #     wait: yes
+    #   loop: "{{ ec2_instances.results }}"
