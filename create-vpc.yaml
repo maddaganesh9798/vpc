@@ -137,7 +137,7 @@
       amazon.aws.ec2_vpc_nat_gateway:
         region: "{{ region }}"
         # Selects the first subnet marked as public from the created subnets
-        subnet_id: "{{ (subnets_config.results | selectattr('item.Expance-Public', 'equalto', True) | first).subnet.id }}"
+        subnet_id: "{{ (subnets_config.results | selectattr('item.public', 'equalto', True) | first).subnet.id }}"
         allocation_id: "{{ nat_eip.allocation_id }}"
         wait: yes
         if_exist_do_not_create: yes
