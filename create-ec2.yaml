@@ -74,7 +74,7 @@
         value: "{{ item.instances[0].public_ip_address }}"
         wait: true
       loop: "{{ ec2_instances.results }}"
-      when: item.invocation.module_args.name == 'frontend'
+      when: item.item.name == 'frontend'
 
   #private IP R53
   # - name: create r53 private records
