@@ -158,6 +158,7 @@
           - dest: 0.0.0.0/0
             gateway_id: "{{ nat_gw.nat_gateway_id }}"
 
+
     - name: Launch EC2 Instances
       amazon.aws.ec2_instance:
         name: "{{ item.name }}"
@@ -170,9 +171,9 @@
         tags:
           Tier: "{{ item.tier }}"
       loop:
-        - { name: 'Frontend', tier: 'Expance-Public', sg_id: "{{ Public.group_id }}" }
-        - { name: 'Backend',  tier: 'Expance-Private', sg_id: "{{ Private.group_id }}" }
-        - { name: 'Database', tier: 'Expance-DB',      sg_id: "{{ DB.group_id }}" }
+        - { name: 'frontend', tier: 'Expance-Public', sg_id: "{{ Public.group_id }}" }
+        - { name: 'backend',  tier: 'Expance-Private', sg_id: "{{ Private.group_id }}" }
+        - { name: 'mysql', tier: 'Expance-DB',      sg_id: "{{ DB.group_id }}" }
       register: ec2_instances
 
     # - name: Create Route 53 Private Records
@@ -221,4 +222,4 @@
         wait: true
         overwrite: true
       loop: "{{ ec2_instances.results }}"
-      when: item.item == "Expance-Frontend" #when keyword should not have {{}}
+      when: item.item == "frontend" #when keyword should not have {{}}
